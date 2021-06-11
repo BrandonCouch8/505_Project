@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+	<title>Portfolio Project: Mapping Seattle Fire 911 Calls</title>
+	<!-- CSS -->
+  <link rel="stylesheet" href="styles.css">
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"/>
+  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v2.0.0/mapbox-gl.css' rel='stylesheet' />
+
+	<!-- JavaScript library -->
+	<script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"></script>
+  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v2.0.0/mapbox-gl.js'></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+	<script src= "https://cdn.jsdelivr.net/npm/leaflet-legend@1.0.2/leaflet-legend.min.js"></script>
+
+
+</head>
+
+<body>
+  <h1>Portfolio Project: Mapping Seattle Fire 911 Calls</h1>
+	<div id="map1"></div>
+	<h2>Heat Map of Fire Department Responses in Seattle</h2>
+	<p>Cartographer's Statement goes here</p>
+  <script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoiYnJhbmRvbmNvdWNoOCIsImEiOiJja2h2NHNpcW4xaXJhMnhtanQ5NHp2ZWppIn0.SLSInhDEagBT3c0do7OQag';
+    var map1 = new mapboxgl.Map({
+      container: 'map1',
+      style:  'mapbox://styles/mapbox/light-v10',
+      center: [-122.3321, 47.63],
+      zoom: 10
+    });
+
+    map1.on('load', function() {
+      map1.addSource('fires', {
+        type: 'geojson',
+        data: 'https://data.seattle.gov/resource/fire-911.geojson'
+      });
+
+      // add heatmap layer here
+      map1.addLayer({
+        id: 'fires-heat',
+        type: 'heatmap',
+        source: 'fires',
+        maxzoom: 15,
+        paint: {
+          'heatmap-weight': 1,
+          // increase intensity as zoom level increases
+          'heatmap-intensity': {
+            stops: [
+              [11, 1],
+              [15, 3]
+            ]
+          },
+          // assign color values be applied to points depending on their density
+          'heatmap-color': [
+            'interpolate',
+            ['linear'],
+            ['heatmap-density'],
+            0, 'rgba(254,240,217,0)',
+            0.2, 'rgb(253,204,138)',
+            0.4, 'rgb(252,141,89)',
+            0.6, 'rgb(227,74,51)',
+            0.8, 'rgb(179,0,0)'
+          ],
+          // increase radius as zoom increases
+          'heatmap-radius': {
+            stops: [
+              [11, 15],
+              [15, 20]
+            ]
+          },
+          // decrease opacity to transition into the circle layer
+          'heatmap-opacity': {
+            default: 1,
+            stops: [
+              [14, 1],
+              [15, 0]
+            ]
+          },
+        }
+      });
+      // add circle layer here
+      map1.addLayer({
+        id: 'fires-point',
+        type: 'circle',
+        source: 'fires',
+        minzoom: 14,
+        paint: {
+          // increase the radius of the circle as the zoom level increases
+          'circle-radius': 10,
+          'circle-color': 'rgb(179,0,0)',
+          'circle-stroke-color': 'white',
+          'circle-stroke-width': 1,
+          'circle-opacity': {
+            stops: [
+              [14, 0],
+              [15, 1]
+            ]
+          }
+        }
+      });
+
+			map1.on('mouseenter', 'fires-point', function () {
+				map1.getCanvas().style.cursor = 'pointer';
+			});
+
+			map1.on('mouseleave', 'fires-point', function () {
+				map1.getCanvas().style.cursor = '';
+			});
+
+      map1.on('click', 'fires-point', function(e) {
+        new mapboxgl.Popup()
+          .setLngLat(e.features[0].geometry.coordinates)
+          .setHTML(
+						'<b>Type: </b> ' + e.features[0].properties.type +
+						'<br><b>Address: </b>' + e.features[0].properties.address +
+						'<br><b>Date and Time: </b>' + e.features[0].properties.datetime)
+          .addTo(map1);
+      });
+    });
+  </script>
+</body>
+<footer>
+	<p>References:</p>
+	<p>Seattle Real Time Fire 911 Calls: <a href="https://data.seattle.gov/Public-Safety/Seattle-Real-Time-Fire-911-Calls/kzjm-xkqj" target="_blank">City of Seattle GeoHub</a></p>
+</footer>
